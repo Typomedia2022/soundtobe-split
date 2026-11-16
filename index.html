@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sound To Be · Split</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#000000">
+<style>
+  :root{
+    --bg:#0c0c0c; --panel:#151515; --panel2:#1f1f1f; --line:#2c2c2c;
+    --text:#ececf0; --muted:#8d8d8d; --accent:#ffffff; --danger:#ff6b6b; --ok:#5ee2a0;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+  button,input,select,textarea{font:inherit;color:inherit}
+  input,textarea,select{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+  button{cursor:pointer;border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:8px 12px}
+  button:hover{border-color:var(--muted)}
+  button.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:600}
+  button.ghost{background:none;border-color:transparent;color:var(--muted);text-align:left}
+  button.ghost:hover{color:var(--text)}
+  button.danger{color:var(--danger)}
+  .app{display:grid;grid-template-columns:270px 1fr;min-height:100vh;background:linear-gradient(to right,var(--panel) 269px,var(--line) 269px,var(--line) 270px,var(--bg) 270px)}
+  aside{background:var(--panel);border-right:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:10px;position:sticky;top:0;height:100vh}
+  .brand{font-weight:800;font-size:17px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+  .brand img{border-radius:12px;border:1px solid var(--line)}
+  .brand span{color:var(--accent)}
+  .brand small{display:block;font-weight:400;color:var(--muted);font-size:12px;letter-spacing:0}
+  .navitem{padding:9px 12px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:10px;border:1px solid transparent}
+  .navitem:hover{background:var(--panel2)}
+  .navitem.sel{background:var(--panel2);border-color:var(--line)}
+  .navitem small{color:var(--muted);margin-left:auto}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .sect{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:10px 0 0 4px}
+  .alist{overflow:auto;flex:1;display:flex;flex-direction:column;gap:2px}
+  .side-foot{display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--line);padding-top:10px}
+  .savestate{font-size:12px;color:var(--muted);padding:6px 4px;line-height:1.4}
+  .savestate b{color:var(--ok);font-weight:500}
+  .savestate b.warn{color:var(--accent)}
+  main{padding:28px 32px;max-width:1100px;width:100%}
+  h1{margin:0 0 4px;font-size:24px}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:30px 0 10px;font-weight:600}
+  .crumb{color:var(--muted);margin-bottom:6px;font-size:13px}
+  .crumb a{color:var(--muted);cursor:pointer;text-decoration:underline}
+  .grid{display:grid;gap:12px}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  label{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+  .card small{color:var(--muted);display:block}
+  .card b{font-size:21px;display:block;margin-top:4px;font-variant-numeric:tabular-nums}
+  .card.warn b{color:var(--danger)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:500;font-size:12px}
+  tr:last-child td{border-bottom:none}
+  tr.tot td{font-weight:600;background:var(--panel2)}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  td input.n{width:90px;text-align:right}
+  td.cell{cursor:pointer}
+  td.cell:hover{background:var(--panel2)}
+  td.cell.empty{color:var(--line)}
+  td.cell.empty:hover{color:var(--accent)}
+  tr.click{cursor:pointer}
+  tr.click:hover td{background:var(--panel2)}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .spacer{flex:1}
+  .muted{color:var(--muted)}
+  .empty-state{color:var(--muted);padding:60px 0;text-align:center;line-height:1.7}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:none;border-radius:0;background:none;padding:7px 12px}
+  .seg button.on{background:var(--accent);color:#111;font-weight:600}
+  details{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);margin-top:10px}
+  details summary{padding:12px 14px;cursor:pointer;color:var(--muted)}
+  details table{border:none;border-top:1px solid var(--line);border-radius:0}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin:6px 0 10px;color:var(--muted);font-size:12px}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .chart{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px;position:relative}
+  .chart svg{display:block;width:100%;height:auto}
+  .tip{position:fixed;pointer-events:none;background:#000;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;display:none;z-index:10;white-space:nowrap}
+  .banner{background:var(--panel2);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.5}
+  .banner button{margin-top:8px;width:100%}
+  .print-only{display:none}
+  @media (max-width:860px){.app{grid-template-columns:1fr;background:var(--bg)}aside{position:static;height:auto}.g4,.g3,.cards{grid-template-columns:1fr 1fr}main{padding:20px}}
+  @media print{
+    body{background:#fff;color:#000} .app{background:none}
+    aside,.no-print,.tip{display:none!important}
+    .app{display:block} main{padding:0;max-width:none}
+    .print-only{display:block}
+    table,.card,details,.chart{background:#fff;border-color:#ccc}
+    th,td{border-color:#ddd} tr.tot td{background:#f3f3f3}
+    input,select{border:none;background:none;padding:0}
+    .muted,th,.card small,label{color:#555}
+    details{display:block} details:not([open]){display:none}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><img src="logo.png" alt="Sound To Be" width="56" height="56"><div>Split<small>Royalties e ripartizioni</small></div></div>
+    <div id="side"></div>
+    <div class="side-foot">
+      <div id="fileBanner"></div>
+      <div class="savestate" id="saveState"></div>
+      <button class="ghost" id="btnImportXlsx">📄 Importa rendiconto Excel</button>
+      <button class="ghost" id="btnFile">💾 Salva archivio su file</button>
+      <button class="ghost" id="btnOpen">📂 Apri archivio o backup</button>
+      <button class="ghost" id="btnBackup">⬇ Scarica copia di backup</button>
+      <input type="file" id="xlsxInput" accept=".xlsx,.xls" hidden>
+      <input type="file" id="jsonInput" accept=".json" hidden>
+    </div>
+  </aside>
+  <main id="main"></main>
+</div>
+<div class="tip" id="tip"></div>
+
+<script src="xlsx.full.min.js"></script>
+<script>
+// =====================================================================
+// Data & persistence
+// =====================================================================
+const KEY = 'stb-split-v2';
+const uid = () => Math.random().toString(36).slice(2, 10);
+// Validated categorical palette (dark mode), fixed order; slot follows the artist forever
+const SERIES = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#0ca30c', '#9085e9', '#e66767'];
+const OTHER = '#6b6d76';
+const QLAB = q => `T${q}`;
+
+function seed() {
+  return {
+    v: 2, savedAt: 0,
+    people: [{ id: 'label', name: 'Sound To Be', role: 'Etichetta (quota residua)', isLabel: true }],
+    artists: [], statements: [], nextColor: 0,
+    ui: { view: 'home', year: new Date().getFullYear() }
+  };
+}
+let state;
+try { state = JSON.parse(localStorage.getItem(KEY)) || seed(); } catch { state = seed(); }
+
+let fileHandle = null, fileStatus = 'none', lastFileSave = null, writeTimer = null;
+
+function save() {
+  state.savedAt = Date.now();
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+  if (fileHandle && fileStatus === 'ok') {
+    clearTimeout(writeTimer);
+    writeTimer = setTimeout(writeFile, 600);
+  }
+  renderSaveState();
+}
+
+// --- File System Access API: autosave to a JSON file chosen by the user ---
+const fsSupported = 'showSaveFilePicker' in window;
+function idb(op, val) {
+  return new Promise(res => {
+    const r = indexedDB.open('stb-split', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('kv');
+    r.onsuccess = () => {
+      const tx = r.result.transaction('kv', op === 'get' ? 'readonly' : 'readwrite');
+      const st = tx.objectStore('kv');
+      const q = op === 'get' ? st.get('handle') : op === 'del' ? st.delete('handle') : st.put(val, 'handle');
+      q.onsuccess = () => res(q.result); q.onerror = () => res(null);
+    };
+    r.onerror = () => res(null);
+  });
+}
+async function writeFile() {
+  if (!fileHandle) return;
+  try {
+    const w = await fileHandle.createWritable();
+    await w.write(JSON.stringify(state, null, 1)); await w.close();
+    lastFileSave = new Date(); fileStatus = 'ok';
+  } catch (e) { fileStatus = 'error'; }
+  renderSaveState();
+}
+async function readFromHandle(h) {
+  const data = JSON.parse(await (await h.getFile()).text());
+  if (!data.artists || !data.statements) throw new Error('bad');
+  return data;
+}
+async function initFile() {
+  if (!fsSupported) return renderSaveState();
+  const h = await idb('get');
+  if (!h) return renderSaveState();
+  fileHandle = h;
+  const perm = await h.queryPermission({ mode: 'readwrite' });
+  if (perm === 'granted') await adoptFile(); else fileStatus = 'needs-permission';
+  renderSaveState();
+}
+async function reconnect() {
+  if ((await fileHandle.requestPermission({ mode: 'readwrite' })) === 'granted') await adoptFile();
+  renderSaveState();
+}
+// Use the file if newer than browser data, otherwise write browser data to it
+async function adoptFile() {
+  try {
+    const data = await readFromHandle(fileHandle);
+    if ((data.savedAt || 0) > (state.savedAt || 0)) { state = data; localStorage.setItem(KEY, JSON.stringify(state)); render(); }
+    fileStatus = 'ok'; lastFileSave = new Date(data.savedAt || Date.now());
+    if ((data.savedAt || 0) < (state.savedAt || 0)) await writeFile();
+  } catch { fileStatus = 'ok'; await writeFile(); }
+}
+async function createArchive() {
+  try {
+    const h = await showSaveFilePicker({ suggestedName: 'SoundToBe-archivio.json', types: [{ description: 'Archivio Sound To Be', accept: { 'application/json': ['.json'] } }] });
+    fileHandle = h; await idb('put', h); fileStatus = 'ok'; await writeFile();
+  } catch {}
+}
+async function openArchive() {
+  try {
+    const [h] = await showOpenFilePicker({ types: [{ description: 'Archivio Sound To Be', accept: { 'application/json': ['.json'] } }] });
+    const data = await readFromHandle(h);
+    if (!confirm('Aprire questo archivio? I dati mostrati ora verranno sostituiti da quelli del file.')) return;
+    state = data; fileHandle = h; await idb('put', h); fileStatus = 'ok';
+    if ((await h.requestPermission({ mode: 'readwrite' })) !== 'granted') fileStatus = 'needs-permission';
+    save(); render();
+  } catch (e) { if (e && e.message === 'bad') alert('Il file non è un archivio valido.'); }
+}
+
+// =====================================================================
+// Helpers
+// =====================================================================
+const eur = n => new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', useGrouping: 'always' }).format(n || 0);
+const pctf = n => (n || 0).toLocaleString('it-IT', { maximumFractionDigits: 2 }) + '%';
+// Accepts "2.467,58", "2467,58", "2467.58"
+function num(v) {
+  if (typeof v === 'number') return v;
+  let s = String(v ?? '').trim().replace(/[€\s]/g, '');
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(s); return isNaN(n) ? 0 : n;
+}
+const fmtIn = n => (n === '' || n == null) ? '' : (Math.round(num(n) * 100) / 100).toString().replace('.', ',');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const person = id => state.people.find(p => p.id === id);
+const artist = id => state.artists.find(a => a.id === id);
+const stmt = id => state.statements.find(s => s.id === id);
+const colorOf = a => a && a.colorIdx < SERIES.length ? SERIES[a.colorIdx] : OTHER;
+const label = () => state.people.find(p => p.isLabel);
+const sortStmts = list => [...list].sort((a, b) => b.year - a.year || b.q - a.q);
+const years = () => {
+  const ys = new Set(state.statements.map(s => s.year)); ys.add(new Date().getFullYear()); ys.add(state.ui.year);
+  return [...ys].sort((a, b) => b - a);
+};
+
+function calc(s) {
+  const gross = num(s.gross), fee = Math.abs(num(s.fee));
+  const net = s.net === '' || s.net == null ? Math.max(0, gross - fee) : num(s.net);
+  const base = Math.max(0, (s.basis === 'gross' ? gross : net) - num(s.costs));
+  const rows = s.splits.map(sp => {
+    const quota = base * num(sp.pct) / 100;
+    return { sp, person: person(sp.personId), quota, payout: quota - num(sp.deduct) };
+  });
+  const totalPct = s.splits.reduce((t, sp) => t + num(sp.pct), 0);
+  const quotas = rows.reduce((t, r) => t + r.quota, 0);
+  return { gross, net, base, rows, totalPct, payouts: rows.reduce((t, r) => t + r.payout, 0), labelShare: base - quotas };
+}
+
+function go(ui) { document.getElementById('tip').style.display = 'none'; state.ui = { ...state.ui, ...ui }; save(); render(); window.scrollTo(0, 0); }
+
+// =====================================================================
+// Rendering
+// =====================================================================
+function render() {
+  renderSide();
+  const v = state.ui.view;
+  if (v === 'artist' && artist(state.ui.artistId)) renderArtist();
+  else if (v === 'stmt' && stmt(state.ui.stmtId)) renderStmt();
+  else if (v === 'people') renderPeople();
+  else { state.ui.view = 'home'; renderHome(); }
+}
+
+function renderSide() {
+  const ui = state.ui;
+  const totals = {};
+  state.statements.forEach(s => totals[s.artistId] = (totals[s.artistId] || 0) + 1);
+  const curArtist = ui.view === 'artist' ? ui.artistId : ui.view === 'stmt' ? stmt(ui.stmtId)?.artistId : null;
+  document.getElementById('side').innerHTML = `
+    <div class="navitem ${ui.view === 'home' ? 'sel' : ''}" data-go="home">📊 Panoramica</div>
+    <div class="navitem ${ui.view === 'people' ? 'sel' : ''}" data-go="people">👥 Persone e pagamenti</div>
+    <div class="sect">Artisti / progetti</div>`;
+  const list = document.createElement('div'); list.className = 'alist';
+  list.innerHTML = [...state.artists].sort((a, b) => a.name.localeCompare(b.name)).map(a => `
+      <div class="navitem ${curArtist === a.id ? 'sel' : ''}" data-artist="${a.id}">
+        <span class="dot" style="background:${colorOf(a)}"></span>${esc(a.name) || 'Senza nome'}<small>${totals[a.id] || 0}</small>
+      </div>`).join('') + `<button class="ghost" id="newArtist" style="margin-top:4px">+ Nuovo artista / progetto</button>`;
+  const side = document.getElementById('side');
+  side.style.cssText = 'display:flex;flex-direction:column;gap:2px;flex:1;min-height:0';
+  side.appendChild(list);
+  side.querySelectorAll('[data-go]').forEach(el => el.onclick = () => go({ view: el.dataset.go }));
+  side.querySelectorAll('[data-artist]').forEach(el => el.onclick = () => go({ view: 'artist', artistId: el.dataset.artist }));
+  document.getElementById('newArtist').onclick = () => newArtist();
+}
+
+function renderSaveState() {
+  const el = document.getElementById('saveState'), ban = document.getElementById('fileBanner');
+  const t = d => d ? d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '';
+  ban.innerHTML = '';
+  if (fileHandle && fileStatus === 'ok') {
+    el.innerHTML = `<b>● Salvataggio automatico attivo</b><br>${esc(fileHandle.name)} · ${t(lastFileSave)}`;
+  } else if (fileHandle && fileStatus === 'needs-permission') {
+    el.innerHTML = '';
+    ban.innerHTML = `<div class="banner">L'archivio <b>${esc(fileHandle.name)}</b> va riconnesso dopo la riapertura dell'app.<button class="primary" id="btnReconnect">Riconnetti archivio</button></div>`;
+    document.getElementById('btnReconnect').onclick = reconnect;
+  } else if (fileStatus === 'error') {
+    el.innerHTML = `<b class="warn">● Errore di scrittura sul file</b><br>I dati sono comunque salvati nell'app.`;
+  } else {
+    el.innerHTML = `<b>● Salvato automaticamente nell'app</b><br>${fsSupported ? 'Collega un file per avere anche una copia sul disco.' : 'Scarica ogni tanto una copia di backup.'}`;
+  }
+}
+
+// ---------------- Home: year overview ----------------
+function renderHome() {
+  const main = document.getElementById('main');
+  const y = state.ui.year;
+  const inYear = state.statements.filter(s => s.year === y);
+  if (!state.artists.length) {
+    main.innerHTML = `<div class="empty-state"><h1>Benvenuto</h1>Inizia importando un rendiconto Excel<br>oppure crea un artista dalla colonna a sinistra.<br><br>
+      <button class="primary" onclick="document.getElementById('xlsxInput').click()">📄 Importa rendiconto Excel</button></div>`;
+    return;
+  }
+  let gross = 0, base = 0, pay = 0, lab = 0;
+  const grid = {}; // artistId -> q -> {base, id}
+  inYear.forEach(s => {
+    const c = calc(s); gross += c.gross; base += c.base; pay += c.payouts; lab += c.labelShare;
+    (grid[s.artistId] ??= {})[s.q] = { base: c.base, id: s.id };
+  });
+  const artists = [...state.artists].sort((a, b) => a.name.localeCompare(b.name));
+
+  main.innerHTML = `
+    <div class="row"><h1>Panoramica</h1><span class="spacer"></span>
+      <div class="seg">${years().map(yy => `<button class="${yy === y ? 'on' : ''}" data-year="${yy}">${yy}</button>`).join('')}</div>
+    </div>
+    <div class="cards">
+      <div class="card"><small>Incassi lordi ${y}</small><b>${eur(gross)}</b></div>
+      <div class="card"><small>Base ripartita</small><b>${eur(base)}</b></div>
+      <div class="card"><small>Da liquidare a terzi</small><b>${eur(pay)}</b></div>
+      <div class="card"><small>Quota Sound To Be</small><b>${eur(lab)}</b></div>
+    </div>
+    <h2>Base ripartita per trimestre</h2>
+    <div class="chart" id="chart"></div>
+    <h2>Artisti × trimestri ${y}</h2>
+    <table>
+      <thead><tr><th>Artista</th>${[1, 2, 3, 4].map(q => `<th class="num">${QLAB(q)}</th>`).join('')}<th class="num">Totale</th></tr></thead>
+      <tbody>
+      ${artists.map(a => {
+        const r = grid[a.id] || {}; const tot = [1, 2, 3, 4].reduce((t, q) => t + (r[q]?.base || 0), 0);
+        return `<tr><td class="cell" data-artist="${a.id}"><span class="dot" style="display:inline-block;background:${colorOf(a)};margin-right:8px"></span>${esc(a.name)}</td>
+          ${[1, 2, 3, 4].map(q => r[q] ? `<td class="num cell" data-stmt="${r[q].id}">${eur(r[q].base)}</td>`
+            : `<td class="num cell empty" data-new="${a.id}" data-q="${q}" title="Nuovo rendiconto">+</td>`).join('')}
+          <td class="num"><b>${tot ? eur(tot) : '<span class="muted">—</span>'}</b></td></tr>`;
+      }).join('')}
+      <tr class="tot"><td>Totale</td>${[1, 2, 3, 4].map(q => `<td class="num">${eur(inYear.filter(s => s.q === q).reduce((t, s) => t + calc(s).base, 0))}</td>`).join('')}<td class="num">${eur(base)}</td></tr>
+      </tbody>
+    </table>
+    <p class="muted" style="font-size:12px">Clicca su un importo per aprire il rendiconto, oppure su "+" per crearne uno nuovo.</p>`;
+
+  main.querySelectorAll('[data-year]').forEach(b => b.onclick = () => go({ year: +b.dataset.year }));
+  main.querySelectorAll('[data-stmt]').forEach(td => td.onclick = () => go({ view: 'stmt', stmtId: td.dataset.stmt }));
+  main.querySelectorAll('td[data-artist]').forEach(td => td.onclick = () => go({ view: 'artist', artistId: td.dataset.artist }));
+  main.querySelectorAll('[data-new]').forEach(td => td.onclick = () => newStatement(td.dataset.new, y, +td.dataset.q));
+
+  // Stacked bar chart: quarters on x, artists stacked
+  const series = artists.filter(a => grid[a.id]).map(a => ({ a, vals: [1, 2, 3, 4].map(q => grid[a.id][q]?.base || 0) }));
+  drawStacked(document.getElementById('chart'), [1, 2, 3, 4].map(q => `${QLAB(q)} ${y}`), series);
+}
+
+// Simple stacked bar SVG with hover tooltip and legend
+function drawStacked(el, cats, series) {
+  if (!series.length) { el.innerHTML = '<div class="muted" style="padding:30px;text-align:center">Nessun dato per questo periodo.</div>'; return; }
+  const W = 760, H = 240, padL = 70, padB = 28, padT = 10, plotH = H - padB - padT;
+  const totals = cats.map((_, i) => series.reduce((t, s) => t + s.vals[i], 0));
+  const max = Math.max(...totals) || 1;
+  const step = Math.pow(10, Math.floor(Math.log10(max))); const nice = Math.ceil(max / step) * step;
+  const ticks = [0, .25, .5, .75, 1].map(f => f * nice);
+  const bw = Math.min(90, (W - padL) / cats.length * 0.5);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Base ripartita per trimestre">`;
+  ticks.forEach(t => {
+    const yy = padT + plotH - t / nice * plotH;
+    svg += `<line x1="${padL}" x2="${W}" y1="${yy}" y2="${yy}" stroke="#2c2c2c" stroke-width="1"/>
+      <text x="${padL - 8}" y="${yy + 4}" fill="#8d8d8d" font-size="11" text-anchor="end">${eur(t).replace(',00', '')}</text>`;
+  });
+  cats.forEach((c, i) => {
+    const cx = padL + (W - padL) / cats.length * (i + .5);
+    let y0 = padT + plotH;
+    const segs = series.filter(s => s.vals[i] > 0);
+    segs.forEach((s, k) => {
+      const h = s.vals[i] / nice * plotH; const gap = k ? 2 : 0;
+      const top = k === segs.length - 1;
+      const y1 = y0 - h; const r = top ? Math.min(4, h) : 0; const x = cx - bw / 2;
+      const d = `M${x},${y0 - gap} V${y1 + r} Q${x},${y1} ${x + r},${y1} H${x + bw - r} Q${x + bw},${y1} ${x + bw},${y1 + r} V${y0 - gap} Z`;
+      svg += `<path d="${d}" fill="${colorOf(s.a)}" data-tip="${esc(s.a.name)}|${c}|${s.vals[i]}"/>`;
+      y0 = y1;
+    });
+    svg += `<rect x="${cx - bw}" y="${padT}" width="${bw * 2}" height="${plotH}" fill="transparent" data-tipcat="${i}"/>`;
+    svg += `<text x="${cx}" y="${H - 8}" fill="#8d8d8d" font-size="12" text-anchor="middle">${c}</text>`;
+    if (totals[i]) svg += `<text x="${cx}" y="${y0 - 6}" fill="#ececf0" font-size="11" text-anchor="middle">${eur(totals[i]).replace(/,\d\d/, '')}</text>`;
+  });
+  svg += '</svg>';
+  el.innerHTML = `<div class="legend">${series.map(s => `<span><i class="dot" style="background:${colorOf(s.a)}"></i>${esc(s.a.name)}</span>`).join('')}</div>` + svg;
+  // Hover: per-quarter tooltip listing every artist in that bar
+  const tip = document.getElementById('tip');
+  el.querySelectorAll('[data-tipcat]').forEach(r => {
+    const i = +r.dataset.tipcat;
+    r.onmousemove = e => {
+      const rows = series.filter(s => s.vals[i] > 0).map(s => `<div class="row" style="gap:16px"><span><i class="dot" style="display:inline-block;background:${colorOf(s.a)};margin-right:6px"></i>${esc(s.a.name)}</span><span class="spacer"></span><b>${eur(s.vals[i])}</b></div>`).join('');
+      tip.innerHTML = `<div class="muted" style="margin-bottom:4px">${cats[i]}</div>${rows || 'Nessun dato'}<div class="row" style="border-top:1px solid #2c2c2c;margin-top:4px;padding-top:4px"><span>Totale</span><span class="spacer"></span><b>${eur(totals[i])}</b></div>`;
+      tip.style.display = 'block'; tip.style.left = (e.clientX + 14) + 'px'; tip.style.top = (e.clientY + 14) + 'px';
+    };
+    r.onmouseleave = () => tip.style.display = 'none';
+  });
+}
+
+// ---------------- Artist page ----------------
+function renderArtist() {
+  const main = document.getElementById('main');
+  const a = artist(state.ui.artistId);
+  const list = sortStmts(state.statements.filter(s => s.artistId === a.id));
+  const ys = [...new Set(list.map(s => s.year))].sort((x, y) => y - x);
+  let totBase = 0, totArtist = 0;
+  list.forEach(s => { const c = calc(s); totBase += c.base; totArtist += c.rows.filter(r => r.sp.personId === a.personId).reduce((t, r) => t + r.payout, 0); });
+  const others = state.people.filter(p => !p.isLabel && !a.defaults.some(d => d.personId === p.id));
+
+  main.innerHTML = `
+    <div class="crumb"><a data-go="home">Panoramica</a> › Artista</div>
+    <div class="row"><span class="dot" style="background:${colorOf(a)};width:14px;height:14px"></span>
+      <input id="a-name" value="${esc(a.name)}" style="font-size:22px;font-weight:700;background:none;border-color:transparent;max-width:500px;padding:4px"></div>
+    <div class="grid g3" style="margin-top:8px">
+      <div><label>Altri nomi (alias nei rendiconti)</label><input id="a-aka" value="${esc(a.aka)}" placeholder="Es. GIULIA CUTUOGNO"></div>
+    </div>
+    <div class="cards">
+      <div class="card"><small>Rendiconti</small><b>${list.length}</b></div>
+      <div class="card"><small>Base ripartita totale</small><b>${eur(totBase)}</b></div>
+      <div class="card"><small>Liquidato all'artista</small><b>${eur(totArtist)}</b></div>
+      <div class="card"><small>Ultimo periodo</small><b>${list[0] ? QLAB(list[0].q) + ' ' + list[0].year : '—'}</b></div>
+    </div>
+
+    <h2>Andamento nel tempo</h2>
+    <div class="chart" id="achart"></div>
+
+    <div class="row" style="margin-top:30px"><h2 style="margin:0">Rendiconti</h2><span class="spacer"></span>
+      <button class="primary" id="newStmt">+ Nuovo rendiconto</button></div>
+    ${list.length ? `<table style="margin-top:10px">
+      <thead><tr><th>Periodo</th><th>Fonte</th><th class="num">Incassi lordi</th><th class="num">Base</th><th class="num">Da liquidare</th><th class="num">Quota S2B</th></tr></thead>
+      <tbody>${list.map(s => { const c = calc(s); return `<tr class="click" data-stmt="${s.id}">
+        <td><b>${QLAB(s.q)} ${s.year}</b></td><td class="muted">${esc((s.source || '').slice(0, 40))}</td>
+        <td class="num">${eur(c.gross)}</td><td class="num">${eur(c.base)}</td><td class="num">${eur(c.payouts)}</td><td class="num">${eur(c.labelShare)}</td></tr>`; }).join('')}
+      </tbody></table>` : '<p class="muted">Nessun rendiconto ancora.</p>'}
+
+    <h2>Ripartizione predefinita</h2>
+    <p class="muted" style="margin-top:-4px">Viene proposta a ogni nuovo rendiconto di questo artista. Quello che resta va a Sound To Be.</p>
+    <table>
+      <thead><tr><th>Persona</th><th>Ruolo</th><th class="num">%</th><th></th></tr></thead>
+      <tbody>${a.defaults.map((d, i) => { const p = person(d.personId); return `<tr>
+        <td>${esc(p?.name)}</td><td class="muted">${esc(p?.role)}</td>
+        <td class="num"><input class="n" data-dpct="${i}" value="${fmtIn(d.pct)}" inputmode="decimal"></td>
+        <td class="num"><button class="ghost danger" data-ddel="${i}">Rimuovi</button></td></tr>`; }).join('')}
+      <tr class="tot"><td>Sound To Be</td><td class="muted">quota residua</td><td class="num" id="a-rest"></td><td></td></tr>
+      </tbody></table>
+    <div class="row" style="margin-top:10px">
+      <select id="addDef" style="max-width:280px"><option value="">+ Aggiungi persona…</option>
+        ${others.map(p => `<option value="${p.id}">${esc(p.name)} · ${esc(p.role)}</option>`).join('')}
+        <option value="__new">➕ Nuova persona…</option></select>
+      <span class="spacer"></span><button class="danger" id="delArtist">Elimina artista</button>
+    </div>`;
+
+  const updRest = () => document.getElementById('a-rest').textContent = pctf(100 - a.defaults.reduce((t, d) => t + num(d.pct), 0));
+  updRest();
+  main.querySelector('[data-go]').onclick = () => go({ view: 'home' });
+  const nm = document.getElementById('a-name');
+  nm.oninput = () => { a.name = nm.value; const p = person(a.personId); if (p) p.name = nm.value; save(); renderSide(); };
+  document.getElementById('a-aka').oninput = e => { a.aka = e.target.value; save(); };
+  main.querySelectorAll('[data-dpct]').forEach(inp => inp.oninput = () => { a.defaults[+inp.dataset.dpct].pct = num(inp.value); save(); updRest(); });
+  main.querySelectorAll('[data-ddel]').forEach(b => b.onclick = () => { a.defaults.splice(+b.dataset.ddel, 1); save(); render(); });
+  main.querySelectorAll('[data-stmt]').forEach(tr => tr.onclick = () => go({ view: 'stmt', stmtId: tr.dataset.stmt }));
+  document.getElementById('addDef').onchange = e => {
+    let id = e.target.value; if (!id) return;
+    if (id === '__new') { const p = newPerson(); if (!p) return render(); id = p.id; }
+    a.defaults.push({ personId: id, pct: 0 }); save(); render();
+  };
+  document.getElementById('newStmt').onclick = () => {
+    const last = list[0]; const next = last ? (last.q === 4 ? [last.year + 1, 1] : [last.year, last.q + 1]) : [new Date().getFullYear(), Math.ceil((new Date().getMonth() + 1) / 3)];
+    newStatement(a.id, next[0], next[1]);
+  };
+  document.getElementById('delArtist').onclick = () => {
+    if (!confirm(`Eliminare ${a.name} e tutti i suoi ${list.length} rendiconti?`)) return;
+    state.statements = state.statements.filter(s => s.artistId !== a.id);
+    state.artists = state.artists.filter(x => x.id !== a.id); go({ view: 'home' });
+  };
+
+  // Timeline chart: one bar per quarter, from first to last statement
+  if (list.length) {
+    const asc = [...list].reverse(); const first = asc[0], lastS = asc[asc.length - 1];
+    const cats = [], vals = [];
+    for (let y = first.year, q = first.q; y < lastS.year || (y === lastS.year && q <= lastS.q); q === 4 ? (y++, q = 1) : q++) {
+      cats.push(`${QLAB(q)} ${String(y).slice(2)}`);
+      vals.push(list.filter(s => s.year === y && s.q === q).reduce((t, s) => t + calc(s).base, 0));
+    }
+    drawStacked(document.getElementById('achart'), cats, [{ a, vals }]);
+    document.querySelector('#achart .legend').remove();
+  } else document.getElementById('achart').innerHTML = '<div class="muted" style="padding:30px;text-align:center">Il grafico comparirà con il primo rendiconto.</div>';
+}
+
+// ---------------- Statement page ----------------
+function renderStmt() {
+  const main = document.getElementById('main');
+  const s = stmt(state.ui.stmtId); const a = artist(s.artistId);
+  const usedIds = s.splits.map(sp => sp.personId);
+  const others = state.people.filter(p => !p.isLabel && !usedIds.includes(p.id));
+  const yearOpts = []; for (let y = new Date().getFullYear() + 1; y >= 2015; y--) yearOpts.push(y);
+
+  main.innerHTML = `
+    <div class="crumb no-print"><a data-go="home">Panoramica</a> › <a data-goartist>${esc(a.name)}</a> › Rendiconto</div>
+    <div class="print-only row" style="margin-bottom:12px"><img src="logo.png" width="48" height="48"><b>Sound To Be S.r.l.</b> · Rendiconto royalties</div>
+    <h1>${esc(a.name)} · ${QLAB(s.q)} ${s.year}</h1>
+    <div class="grid g4" style="margin-top:14px">
+      <div><label>Anno</label><select id="s-year">${yearOpts.map(y => `<option ${y === s.year ? 'selected' : ''}>${y}</option>`).join('')}</select></div>
+      <div><label>Trimestre</label><select id="s-q">${[1, 2, 3, 4].map(q => `<option value="${q}" ${q === s.q ? 'selected' : ''}>${q}° trimestre</option>`).join('')}</select></div>
+      <div style="grid-column:span 2"><label>Fonte</label><input id="s-source" value="${esc(s.source)}" placeholder="Es. ADA / Warner, account…"></div>
+    </div>
+    <div class="grid g4" style="margin-top:12px">
+      <div><label>Incassi lordi (€)</label><input id="s-gross" value="${fmtIn(s.gross)}" inputmode="decimal" placeholder="0,00"></div>
+      <div><label>Trattenuta distributore (€)</label><input id="s-fee" value="${fmtIn(s.fee)}" inputmode="decimal" placeholder="0,00"></div>
+      <div><label>Netto incassato (€)</label><input id="s-net" value="${fmtIn(s.net)}" inputmode="decimal" placeholder="lordo − trattenuta"></div>
+      <div><label>Altre spese da togliere (€)</label><input id="s-costs" value="${fmtIn(s.costs)}" inputmode="decimal" placeholder="0,00"></div>
+    </div>
+    <div class="row no-print" style="margin-top:12px"><span class="muted">Le percentuali si calcolano sul</span>
+      <div class="seg"><button data-basis="net" class="${s.basis !== 'gross' ? 'on' : ''}">Netto</button><button data-basis="gross" class="${s.basis === 'gross' ? 'on' : ''}">Lordo</button></div></div>
+
+    <div class="cards" id="s-cards"></div>
+
+    <h2>Ripartizione</h2>
+    <table>
+      <thead><tr><th>Persona</th><th>Ruolo</th><th class="num">%</th><th class="num">Quota</th><th class="num">Anticipi / trattenute</th><th class="num">Da liquidare</th><th class="no-print"></th></tr></thead>
+      <tbody>
+      ${s.splits.map((sp, i) => { const p = person(sp.personId); return `<tr>
+        <td>${esc(p?.name)}</td><td class="muted">${esc(p?.role)}</td>
+        <td class="num"><input class="n" data-f="pct" data-i="${i}" value="${fmtIn(sp.pct)}" inputmode="decimal"></td>
+        <td class="num" id="q-${i}"></td>
+        <td class="num"><input class="n" data-f="deduct" data-i="${i}" value="${fmtIn(sp.deduct)}" inputmode="decimal" placeholder="0"></td>
+        <td class="num"><b id="p-${i}"></b></td>
+        <td class="num no-print"><button class="ghost danger" data-del="${i}">✕</button></td></tr>`; }).join('')}
+      <tr class="tot"><td>Sound To Be</td><td class="muted">quota residua</td><td class="num" id="lab-pct"></td><td class="num" id="lab-q"></td><td></td><td class="num" id="lab-p"></td><td class="no-print"></td></tr>
+      </tbody>
+    </table>
+    <div class="row no-print" style="margin-top:10px">
+      <select id="addPart" style="max-width:280px"><option value="">+ Aggiungi persona…</option>
+        ${others.map(p => `<option value="${p.id}">${esc(p.name)} · ${esc(p.role)}</option>`).join('')}
+        <option value="__new">➕ Nuova persona…</option></select>
+    </div>
+
+    ${s.tracks?.length ? `<details><summary>Dettaglio per brano (${s.tracks.length})</summary>${tableOf(s.tracks, 'Brano')}</details>` : ''}
+    ${s.platforms?.length ? `<details><summary>Dettaglio per piattaforma (${s.platforms.length})</summary>${tableOf(s.platforms, 'Piattaforma')}</details>` : ''}
+
+    <h2>Note</h2>
+    <textarea id="s-notes" rows="3" placeholder="Accordi particolari, verifiche da fare…">${esc(s.notes)}</textarea>
+    ${s.importedFile ? `<p class="muted" style="font-size:12px">Importato da ${esc(s.importedFile)}</p>` : ''}
+
+    <div class="row no-print" style="margin-top:20px">
+      <button id="print">🖨 Stampa / PDF</button><button id="csv">Esporta CSV</button>
+      <span class="spacer"></span><button id="dup">Duplica sul trimestre successivo</button><button class="danger" id="del">Elimina</button>
+    </div>`;
+
+  const update = () => {
+    const c = calc(s);
+    document.getElementById('s-cards').innerHTML = `
+      <div class="card"><small>Base di calcolo</small><b>${eur(c.base)}</b></div>
+      <div class="card ${c.totalPct > 100.0001 ? 'warn' : ''}"><small>Percentuale a terzi</small><b>${pctf(c.totalPct)}</b></div>
+      <div class="card"><small>Da liquidare a terzi</small><b>${eur(c.payouts)}</b></div>
+      <div class="card ${c.labelShare < -0.005 ? 'warn' : ''}"><small>Quota Sound To Be</small><b>${eur(c.labelShare)}</b></div>`;
+    c.rows.forEach((r, i) => { document.getElementById('q-' + i).textContent = eur(r.quota); document.getElementById('p-' + i).textContent = eur(r.payout); });
+    document.getElementById('lab-pct').textContent = pctf(100 - c.totalPct);
+    document.getElementById('lab-q').textContent = eur(c.labelShare);
+    document.getElementById('lab-p').textContent = eur(c.labelShare);
+  };
+  update();
+
+  main.querySelector('[data-go]').onclick = () => go({ view: 'home' });
+  main.querySelector('[data-goartist]').onclick = () => go({ view: 'artist', artistId: a.id });
+  [['s-gross', 'gross'], ['s-fee', 'fee'], ['s-net', 'net'], ['s-costs', 'costs'], ['s-source', 'source'], ['s-notes', 'notes']].forEach(([id, k]) => {
+    document.getElementById(id).oninput = e => { s[k] = e.target.value; save(); update(); };
+  });
+  const periodChange = () => {
+    const y = +document.getElementById('s-year').value, q = +document.getElementById('s-q').value;
+    const clash = state.statements.find(x => x.id !== s.id && x.artistId === s.artistId && x.year === y && x.q === q);
+    if (clash && !confirm(`Esiste già un rendiconto ${QLAB(q)} ${y} per ${a.name}. Tenerli entrambi?`)) return render();
+    s.year = y; s.q = q; state.ui.year = y; save(); render();
+  };
+  document.getElementById('s-year').onchange = periodChange;
+  document.getElementById('s-q').onchange = periodChange;
+  main.querySelectorAll('[data-basis]').forEach(b => b.onclick = () => { s.basis = b.dataset.basis; save(); render(); });
+  main.querySelectorAll('[data-f]').forEach(inp => inp.oninput = () => { s.splits[+inp.dataset.i][inp.dataset.f] = inp.value; save(); update(); });
+  main.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { s.splits.splice(+b.dataset.del, 1); save(); render(); });
+  document.getElementById('addPart').onchange = e => {
+    let id = e.target.value; if (!id) return;
+    if (id === '__new') { const p = newPerson(); if (!p) return render(); id = p.id; }
+    s.splits.push({ personId: id, pct: 0, deduct: '' }); save(); render();
+  };
+  document.getElementById('print').onclick = () => { main.querySelectorAll('details').forEach(d => d.open = true); window.print(); };
+  document.getElementById('csv').onclick = () => exportCsv(s);
+  document.getElementById('dup').onclick = () => {
+    const [y, q] = s.q === 4 ? [s.year + 1, 1] : [s.year, s.q + 1];
+    const n = { ...JSON.parse(JSON.stringify(s)), id: uid(), year: y, q, gross: '', fee: '', net: '', costs: '', notes: '', tracks: [], platforms: [], importedFile: '', source: s.source };
+    n.splits.forEach(sp => sp.deduct = '');
+    state.statements.push(n); go({ view: 'stmt', stmtId: n.id, year: y });
+  };
+  document.getElementById('del').onclick = () => {
+    if (!confirm('Eliminare questo rendiconto?')) return;
+    state.statements = state.statements.filter(x => x.id !== s.id); go({ view: 'artist', artistId: a.id });
+  };
+}
+
+function tableOf(rows, title) {
+  const t = rows.reduce((acc, r) => ({ units: acc.units + (r.units || 0), gross: acc.gross + (r.gross || 0), net: acc.net + (r.net || 0) }), { units: 0, gross: 0, net: 0 });
+  return `<table><thead><tr><th>${title}</th><th class="num">Unità</th><th class="num">Lordo</th><th class="num">Netto</th></tr></thead><tbody>
+    ${rows.map(r => `<tr><td>${esc(r.name)}</td><td class="num">${(r.units || 0).toLocaleString('it-IT')}</td><td class="num">${eur(r.gross)}</td><td class="num">${eur(r.net)}</td></tr>`).join('')}
+    <tr class="tot"><td>Totale</td><td class="num">${t.units.toLocaleString('it-IT')}</td><td class="num">${eur(t.gross)}</td><td class="num">${eur(t.net)}</td></tr></tbody></table>`;
+}
+
+// ---------------- People & payments ----------------
+function renderPeople() {
+  const main = document.getElementById('main');
+  const y = state.ui.year;
+  const owed = {}; // personId -> [q1..q4]
+  state.statements.filter(s => s.year === y).forEach(s => {
+    const c = calc(s);
+    c.rows.forEach(r => { (owed[r.sp.personId] ??= [0, 0, 0, 0])[s.q - 1] += r.payout; });
+    (owed[label().id] ??= [0, 0, 0, 0])[s.q - 1] += c.labelShare;
+  });
+  const ppl = [...state.people].sort((a, b) => (b.isLabel ? 1 : 0) - (a.isLabel ? 1 : 0) || a.name.localeCompare(b.name));
+
+  main.innerHTML = `
+    <div class="row"><h1>Persone e pagamenti</h1><span class="spacer"></span>
+      <div class="seg">${years().map(yy => `<button class="${yy === y ? 'on' : ''}" data-year="${yy}">${yy}</button>`).join('')}</div></div>
+    <h2>Da liquidare nel ${y}</h2>
+    <table>
+      <thead><tr><th>Persona</th>${[1, 2, 3, 4].map(q => `<th class="num">${QLAB(q)}</th>`).join('')}<th class="num">Totale</th></tr></thead>
+      <tbody>${ppl.filter(p => owed[p.id]).map(p => `<tr><td>${esc(p.name)} <span class="muted">· ${esc(p.role)}</span></td>
+        ${owed[p.id].map(v => `<td class="num">${v ? eur(v) : '<span class="muted">—</span>'}</td>`).join('')}
+        <td class="num"><b>${eur(owed[p.id].reduce((t, v) => t + v, 0))}</b></td></tr>`).join('') || `<tr><td colspan="6" class="muted">Nessun rendiconto nel ${y}.</td></tr>`}
+      </tbody></table>
+
+    <h2>Anagrafica</h2>
+    <table>
+      <thead><tr><th>Nome</th><th>Ruolo</th><th></th></tr></thead>
+      <tbody>${ppl.map(p => `<tr>
+        <td><input data-pf="name" data-id="${p.id}" value="${esc(p.name)}"></td>
+        <td><input data-pf="role" data-id="${p.id}" value="${esc(p.role)}" placeholder="Es. Produttore, Autore"></td>
+        <td class="num">${p.isLabel ? '<span class="muted">etichetta</span>' : `<button class="ghost danger" data-pdel="${p.id}">Rimuovi</button>`}</td></tr>`).join('')}
+      </tbody></table>
+    <div class="row" style="margin-top:10px"><button class="primary" id="addPerson">+ Aggiungi persona</button></div>`;
+
+  main.querySelectorAll('[data-year]').forEach(b => b.onclick = () => go({ year: +b.dataset.year }));
+  main.querySelectorAll('[data-pf]').forEach(inp => inp.oninput = () => {
+    const p = person(inp.dataset.id); p[inp.dataset.pf] = inp.value;
+    if (inp.dataset.pf === 'name') state.artists.filter(a => a.personId === p.id).forEach(a => a.name = inp.value);
+    save(); renderSide();
+  });
+  main.querySelectorAll('[data-pdel]').forEach(b => b.onclick = () => {
+    const p = person(b.dataset.pdel);
+    const used = state.statements.some(s => s.splits.some(sp => sp.personId === p.id));
+    if (used) return alert(`${p.name} compare in alcuni rendiconti: toglilo prima da lì.`);
+    if (!confirm(`Rimuovere ${p.name}?`)) return;
+    state.people = state.people.filter(x => x.id !== p.id);
+    state.artists.forEach(a => a.defaults = a.defaults.filter(d => d.personId !== p.id)); save(); render();
+  });
+  document.getElementById('addPerson').onclick = () => { state.people.push({ id: uid(), name: '', role: '' }); save(); render(); const i = main.querySelectorAll('[data-pf="name"]'); i[i.length - 1]?.focus(); };
+}
+
+// =====================================================================
+// Actions
+// =====================================================================
+function newPerson() {
+  const name = prompt('Nome della persona (produttore, autore, artista…):'); if (!name) return null;
+  const role = prompt('Ruolo (facoltativo):', '') || '';
+  const p = { id: uid(), name: name.trim(), role }; state.people.push(p); return p;
+}
+function createArtist(name, aka = '', pct = 0) {
+  const p = { id: uid(), name, role: 'Artista' }; state.people.push(p);
+  const a = { id: uid(), name, aka, personId: p.id, colorIdx: state.nextColor++, defaults: [{ personId: p.id, pct }] };
+  state.artists.push(a); return a;
+}
+function newArtist() {
+  const name = prompt('Nome dell\'artista o del progetto:'); if (!name) return;
+  const pct = num(prompt('Percentuale spettante all\'artista (es. 25):', '25'));
+  const a = createArtist(name.trim(), '', pct); go({ view: 'artist', artistId: a.id });
+}
+function newStatement(artistId, year, q) {
+  const a = artist(artistId);
+  const s = { id: uid(), artistId, year, q, source: '', gross: '', fee: '', net: '', costs: '', basis: 'net', notes: '',
+    splits: a.defaults.map(d => ({ personId: d.personId, pct: d.pct, deduct: '' })), tracks: [], platforms: [] };
+  state.statements.push(s); go({ view: 'stmt', stmtId: s.id, year });
+}
+
+function download(name, content, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function exportCsv(s) {
+  const c = calc(s), a = artist(s.artistId), f = n => (n || 0).toFixed(2).replace('.', ',');
+  const lines = [['Artista', a.name], ['Periodo', `${QLAB(s.q)} ${s.year}`], ['Fonte', s.source], ['Incassi lordi', f(c.gross)], ['Netto', f(c.net)], ['Base di calcolo', f(c.base)], [],
+    ['Persona', 'Ruolo', '%', 'Quota', 'Anticipi', 'Da liquidare'],
+    ...c.rows.map(r => [r.person?.name, r.person?.role, f(num(r.sp.pct)), f(r.quota), f(num(r.sp.deduct)), f(r.payout)]),
+    ['Sound To Be', 'quota residua', f(100 - c.totalPct), f(c.labelShare), '', f(c.labelShare)]];
+  const csv = '﻿' + lines.map(l => l.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\r\n');
+  download(`${a.name}_${s.year}_T${s.q}.csv`.replace(/[^\w.-]+/g, '_'), csv, 'text/csv');
+}
+
+// =====================================================================
+// Excel import (Sound To Be "Royalty statement" recap format)
+// =====================================================================
+async function importXlsx(file) {
+  let rows;
+  try {
+    const wb = XLSX.read(await file.arrayBuffer());
+    const ws = wb.Sheets['Rendiconto'] || wb.Sheets[wb.SheetNames[0]];
+    rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+  } catch { return alert('Non riesco a leggere questo file Excel.'); }
+
+  const txt = v => String(v ?? '').trim();
+  const low = v => txt(v).toLowerCase();
+  const idxOf = (pred, from = 0) => rows.findIndex((r, i) => i >= from && pred(low(r[0])));
+  const val = (pred, from = 0) => { const i = idxOf(pred, from); return i < 0 ? null : rows[i][1]; };
+
+  // Period: "3° trimestre 2026" anywhere in the first rows, or "Q3 2026"
+  const head = rows.slice(0, 10).flat().map(txt).join(' ');
+  let m = head.match(/(\d)\s*°?\s*trimestre\s*(\d{4})/i) || head.match(/\bQ([1-4])\s*[-/ ]?\s*(\d{4})/i);
+  let q, year;
+  if (m) { q = +m[1]; year = +m[2]; }
+  else {
+    const ans = prompt('Non trovo il periodo nel file. Scrivi trimestre e anno (es. 3 2026):'); if (!ans) return;
+    [q, year] = ans.split(/\D+/).map(Number);
+  }
+
+  const artRaw = txt(val(l => l === 'artista'));
+  if (!artRaw) return alert('Formato non riconosciuto: manca la riga "Artista". Puoi inserire il rendiconto a mano.');
+  const name = artRaw.replace(/\(.*\)/, '').trim();
+  const aka = (artRaw.match(/\((?:anche come\s*)?([^)]*)\)/i) || [])[1] || '';
+
+  let pct = num(val(l => l.startsWith('percentuale spettante')));
+  if (pct > 0 && pct <= 1) pct *= 100;
+  const basis = num(val(l => l.startsWith('base di calcolo ('))) === 2 ? 'gross' : 'net';
+  const rIdx = Math.max(0, idxOf(l => l === 'riepilogo'));
+  const gross = num(val(l => l.startsWith('incassi lordi'), rIdx));
+  const fee = num(val(l => l.startsWith('trattenuta'), rIdx));
+  const net = num(val(l => l.startsWith('netto'), rIdx));
+  const deduct = num(val(l => l.startsWith('eventuali anticipi')));
+  const expected = val(l => l.startsWith('importo da liquidare'));
+  const source = txt(val(l => l === 'fonte'));
+
+  const table = title => {
+    const i = idxOf(l => l.startsWith(title)); if (i < 0) return [];
+    const out = [];
+    for (let k = i + 2; k < rows.length; k++) {
+      const n = txt(rows[k][0]); if (!n || n.toUpperCase() === 'TOTALE') break;
+      out.push({ name: n, units: num(rows[k][2]), gross: Math.round(num(rows[k][3]) * 100) / 100, net: Math.round(num(rows[k][4]) * 100) / 100 });
+    }
+    return out;
+  };
+
+  // Find or create the artist
+  let a = state.artists.find(x => [x.name, ...(x.aka || '').split(',')].map(s => s.trim().toLowerCase()).filter(Boolean)
+    .some(n => n === name.toLowerCase() || n === aka.toLowerCase()));
+  if (!a) a = createArtist(name, aka, pct);
+  else if (aka && !a.aka) a.aka = aka;
+
+  const splits = a.defaults.map(d => ({ personId: d.personId, pct: d.personId === a.personId && pct ? pct : d.pct, deduct: '' }));
+  if (!splits.some(sp => sp.personId === a.personId)) splits.unshift({ personId: a.personId, pct, deduct: '' });
+  const artSplit = splits.find(sp => sp.personId === a.personId); if (deduct) artSplit.deduct = fmtIn(deduct);
+
+  const data = { artistId: a.id, year, q, source, gross: fmtIn(gross), fee: fmtIn(fee), net: fmtIn(net), costs: '', basis,
+    splits, tracks: table('dettaglio per brano'), platforms: table('dettaglio per piattaforma'), importedFile: file.name };
+
+  const existing = state.statements.find(s => s.artistId === a.id && s.year === year && s.q === q);
+  let s;
+  if (existing) {
+    if (!confirm(`Esiste già il rendiconto ${QLAB(q)} ${year} di ${a.name}. Sostituirlo con i dati del file?`)) return save(), render();
+    s = Object.assign(existing, data);
+  } else { s = { id: uid(), notes: '', ...data }; state.statements.push(s); }
+
+  const c = calc(s), artPay = c.rows.find(r => r.sp.personId === a.personId)?.payout || 0;
+  const check = expected != null ? (Math.abs(num(expected) - artPay) < 0.02 ? ' ✓ coincide con il file.' : ` ⚠ Il file indica ${eur(num(expected))}: controlla.`) : '';
+  go({ view: 'stmt', stmtId: s.id, year });
+  setTimeout(() => alert(`Importato: ${a.name}, ${QLAB(q)} ${year}.\nBase ${eur(c.base)} · all'artista ${eur(artPay)}.${check}`), 50);
+}
+
+// =====================================================================
+// Wiring
+// =====================================================================
+document.getElementById('btnImportXlsx').onclick = () => document.getElementById('xlsxInput').click();
+document.getElementById('xlsxInput').onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (f) await importXlsx(f); };
+document.getElementById('btnBackup').onclick = () => download(`SoundToBe-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(state, null, 1), 'application/json');
+document.getElementById('jsonInput').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try { const d = JSON.parse(await f.text()); if (!d.artists) throw 0; if (confirm('Sostituire i dati attuali con quelli del backup?')) { state = d; save(); render(); } }
+  catch { alert('File non valido.'); }
+};
+document.getElementById('btnFile').onclick = () => fsSupported ? createArchive()
+  : document.getElementById('btnBackup').click();
+document.getElementById('btnOpen').onclick = () => fsSupported ? openArchive() : document.getElementById('jsonInput').click();
+
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+render(); initFile();
+</script>
+</body>
+</html>
